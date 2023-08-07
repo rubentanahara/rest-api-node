@@ -29,7 +29,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       user.authentication.sessionToken = authentication(salt, user._id.toString());
       await user.save();
 
-      res.cookie(`session-${user.email}`, user.authentication.sessionToken, { domain: 'localhost', path: '/' });
+      res.cookie('TANAHARAGUY-AUTH', user.authentication.sessionToken, { domain: 'localhost', path: '/' });
       return res.sendStatus(200).json().end();
 
    } catch (error) {
