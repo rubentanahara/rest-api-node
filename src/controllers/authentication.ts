@@ -26,7 +26,12 @@ export const login = async (req: express.Request, res: express.Response) => {
       }
 
       const salt = random();
-      user.authentication.sessionToken = salt;
+      user.authentication.sessionToken = authentication(salt, user._id.toString());
+      await user.save();
+
+      res.cookie(`session-${user.email}`, user.authentication.sessionToken, { domain: 'localhost', path: '/' });
+      return res.sendStatus(200).json().end();
+
    } catch (error) {
       console.error(error);
       res.sendStatus(400);
