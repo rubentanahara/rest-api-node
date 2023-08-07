@@ -1,45 +1,43 @@
-//controller for authentication with express 
 import express from 'express';
+
 import { getUserByEmail, createUser } from '../db/users';
-import { random, authentication } from '../helpers';
+import { authentication, random } from '../helpers';
 
-
-//login user with email and password
 export const login = async (req: express.Request, res: express.Response) => {
    try {
       const { email, password } = req.body;
-      //check if user has email and password
+
       if (!email || !password) {
-         return res.sendStatus(403);
+         return res.sendStatus(400);
       }
 
       const user = await getUserByEmail(email).select('+authentication.salt +authentication.password');
 
       if (!user) {
-         res.sendStatus(400);
+         return res.sendStatus(400);
       }
 
       const expectedHash = authentication(user.authentication.salt, password);
 
-      if (user.authentication.password !== expectedHash) {
+      if (user.authentication.password != expectedHash) {
          return res.sendStatus(403);
       }
 
       const salt = random();
       user.authentication.sessionToken = authentication(salt, user._id.toString());
+
       await user.save();
 
       res.cookie('TANAHARAGUY-AUTH', user.authentication.sessionToken, { domain: 'localhost', path: '/' });
       return res.sendStatus(200).json().end();
 
+      return res.status(200).json(user).end();
    } catch (error) {
-      console.error(error);
-      res.sendStatus(400);
+      console.log(error);
+      return res.sendStatus(400);
    }
-
-
 };
-//register the user 
+
 export const register = async (req: express.Request, res: express.Response) => {
    try {
       const { email, password, username } = req.body;
@@ -47,10 +45,13 @@ export const register = async (req: express.Request, res: express.Response) => {
       if (!email || !password || !username) {
          return res.sendStatus(400);
       }
+
       const existingUser = await getUserByEmail(email);
+
       if (existingUser) {
          return res.sendStatus(400);
       }
+
       const salt = random();
       const user = await createUser({
          email,
@@ -60,11 +61,10 @@ export const register = async (req: express.Request, res: express.Response) => {
             password: authentication(salt, password),
          },
       });
-      return res.sendStatus(200).json().end();
 
+      return res.status(200).json(user).end();
    } catch (error) {
       console.log(error);
       return res.sendStatus(400);
-
    }
 };
